@@ -52,6 +52,7 @@ struct Flattening : public PassInfoMixin<Flattening> {
   bool flatten(Function *f);
   PreservedAnalyses run(Function &F, FunctionAnalysisManager &AM) {
     internal.run(F, AM);
+    runObfCon(F);
     runOnFunction(F);
     return PreservedAnalyses::none();
   }

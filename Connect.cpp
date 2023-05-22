@@ -37,6 +37,7 @@ void addConnect(llvm::PassManager<llvm::Function> & m){
 }
 
 bool Connect::runOnFunction(Function &F) {
+  runObfCon(F);
   Function *f = &F;
   std::vector<BasicBlock *> origBB, downBB, allBB;
   std::random_device rd;
