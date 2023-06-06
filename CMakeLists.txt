@@ -28,6 +28,8 @@ if(NOT LLVM_ENABLE_RTTI)
   set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -fno-rtti")
 endif()
 
+include_directories(${CMAKE_SOURCE_DIRECTORY}/3rdparty)
+
 #===============================================================================
 # 3. ADD THE TARGET
 #===============================================================================

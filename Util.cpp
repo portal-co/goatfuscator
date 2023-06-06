@@ -6,9 +6,14 @@
 
 #include "llvm/IR/Instructions.h"
 
+#include "3rdparty/pstream.h"
 #include "DuplicateBB.h"
 #include "Util.h"
 
+#include "llvm/IRReader/IRReader.h"
+#include <iostream>
+#include <llvm-16/llvm/Support/SourceMgr.h>
+#include <llvm/Bitcode/BitcodeReader.h>
 #include <llvm/IR/PassManager.h>
 #include <llvm/Passes/PassPlugin.h>
 #include <random>
@@ -95,7 +100,8 @@ InlineAsm *generateGarbage(Function *f) {
   // uint8_t onebyte[] = {0xEB, 0xE9, 0xE8, 0xE3, 0xE2, 0xE1, 0xE0, 0x70, 0x71,
   //                      0x72, 0x73, 0x74, 0x75, 0x76, 0x77, 0x78, 0x79, 0x7A,
   //                      0x7B, 0x7C, 0x7D, 0x7E, 0x7F, 0xC2, 0xCA, 0xFF, 0x0F};
-  while(rand(g) % 16 != 0)s += ".byte " + std::to_string(rand(g) % 256);
+  while (rand(g) % 16 != 0)
+    s += ".byte " + std::to_string(rand(g) % 256);
   InlineAsm *IA =
       InlineAsm::get(FunctionType::get(Type::getVoidTy(f->getContext()), false),
                      s, "", true, false);
@@ -193,6 +199,20 @@ uint64_t modinv(uint64_t a) {
   return x * (2 - a * x);
 }
 
+void link(Module &m, std::string code) {
+  std::random_device rd;
+  std::string path = "/tmp/goatf-";
+  path += std::to_string(rd());
+  redi::pstream p(std::string("$CXX -c --emit-llvm -o ") + path + " - ");
+  p << code;
+  char c;
+  while (p >> c)
+    std::cerr << c;
+  SMDiagnostic err;
+  auto x = llvm::parseIRFile(path, err, m.getContext());
+  llvm::Linker::linkModules(m, std::move(x));
+}
+
 llvm::PassPluginLibraryInfo getDuplicateBBPluginInfo() {
   return {LLVM_PLUGIN_API_VERSION, "duplicate-bb", LLVM_VERSION_STRING,
           [](PassBuilder &PB) {
@@ -215,7 +235,7 @@ llvm::PassPluginLibraryInfo getDuplicateBBPluginInfo() {
                     addConnect(FPM);
                     return true;
                   }
-                  if(Name == "obfCon"){
+                  if (Name == "obfCon") {
                     addObfCon(FPM);
                     return true;
                   };

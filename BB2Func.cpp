@@ -5,6 +5,7 @@
 #include "Util.h"
 #include <algorithm>
 #include <llvm/IR/PassManager.h>
+#include "llvm/IR/PassManager.h"
 #include <vector>
 #include <list>
 
@@ -15,12 +16,13 @@ using namespace llvm;
 namespace {
 struct BB2Func : public PassInfoMixin<BB2Func> {
   static char ID;
+  // bool virtualize;
 
   BB2Func() {}
 
-  bool runOnFunction(Function &F);
+  bool runOnFunction(Function &F, FunctionAnalysisManager &AM);
     PreservedAnalyses run(Function &F, FunctionAnalysisManager &AM){
-    runOnFunction(F);
+    runOnFunction(F,AM);
     return PreservedAnalyses::none();
   }
 };
@@ -34,7 +36,7 @@ void addBB2Func(llvm::PassManager<llvm::Function> & f){
   f.addPass(BB2Func());
 }
 
-bool BB2Func::runOnFunction(Function &F) {
+bool BB2Func::runOnFunction(Function &F, FunctionAnalysisManager &AM) {
   bool modified = false;
   if(F.getEntryBlock().getName() == "newFuncRoot")
     return modified;
@@ -76,8 +78,9 @@ bool BB2Func::runOnFunction(Function &F) {
     blocks.push_back(BB);
     CodeExtractor CE(blocks);
     assert(CE.isEligible());
-    Function *F = CE.extractCodeRegion(cache);
-    F->addFnAttr(Attribute::NoInline);
+    Function *G = CE.extractCodeRegion(cache);
+    // if(virtualize)AM.getResult<VMCodePass>(F)[BB].render(G);
+    G->addFnAttr(Attribute::NoInline);
     modified = true;
   }
   return modified;
