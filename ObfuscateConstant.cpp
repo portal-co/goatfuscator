@@ -61,7 +61,7 @@ bool ObfuscateConstant::runOnFunction(Function &F, RIV::Result r) {
   bool modified = false;
 
   OriginalInst.clear();
-  for (auto &BB : F.getBasicBlockList()) {
+  for (auto &BB : F) {
     for (BasicBlock::iterator I = BB.getFirstInsertionPt(), end = BB.end();
          I != end; ++I) {
       Instruction &Inst = *I;
@@ -69,7 +69,7 @@ bool ObfuscateConstant::runOnFunction(Function &F, RIV::Result r) {
     }
   }
 
-  for (auto &BB : F.getBasicBlockList()) {
+  for (auto &BB : F) {
     for (BasicBlock::iterator I = BB.getFirstInsertionPt(), end = BB.end();
          I != end; ++I) {
       Instruction &Inst = *I;
@@ -242,7 +242,7 @@ Value *ObfuscateConstant::createExpression(Value *x, const uint32_t p,
 
   auto l = r.lookup(Builder.GetInsertBlock());
 
-  Value *any = RandAny(Generator) % 2 ? any_ : l.size() ? randItem(l, Generator): env_;
+  Value *any = RandAny(Generator) % 2 ? any_ : l.size() ? randItem(l, Generator) : any_;
 
   Value *temp = Builder.CreateOr(x, any);
   temp = Builder.CreateAnd(OverflowMask, temp);

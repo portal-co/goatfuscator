@@ -236,10 +236,10 @@ llvm::PassPluginLibraryInfo getDuplicateBBPluginInfo() {
                     addConnect(FPM);
                     return true;
                   }
-                  // if (Name == "obfCon") {
-                  //   addObfCon(FPM);
-                  //   return true;
-                  // };
+                  if (Name == "obfCon") {
+                    addObfCon(FPM);
+                    return true;
+                  };
                   return false;
                 });
             PB.registerPipelineParsingCallback(

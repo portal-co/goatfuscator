@@ -36,7 +36,7 @@ uint64_t modinv(uint64_t a);
 void addBB2Func(llvm::PassManager<llvm::Function> &);
 void addFlattening(llvm::PassManager<llvm::Function> &);
 void addConnect(llvm::PassManager<llvm::Function> &);
-// void addObfCon(llvm::PassManager<llvm::Function> &);
+void addObfCon(llvm::PassManager<llvm::Function> &);
 void addMerge(llvm::PassManager<llvm::Module> &);
 void addRIV(llvm::PassBuilder &);
 
