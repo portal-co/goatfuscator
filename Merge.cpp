@@ -20,11 +20,12 @@ namespace {
 
     bool runOnModule(Module &M);
       PreservedAnalyses run(Module &F, ModuleAnalysisManager &AM){
-    runOnModule(F);
-    return PreservedAnalyses::none();
+    bool b = runOnModule(F);
+    return b ? PreservedAnalyses::none() : llvm::PreservedAnalyses::all();
   }
 
     std::vector<Function *> mergeList;
+      static bool isRequired() { return true; }
   };
 }
 

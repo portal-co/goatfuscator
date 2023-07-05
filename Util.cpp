@@ -7,7 +7,7 @@
 #include "llvm/IR/Instructions.h"
 
 #include "3rdparty/pstream.h"
-#include "DuplicateBB.h"
+// #include "DuplicateBB.h"
 #include "Util.h"
 
 #include "llvm/IRReader/IRReader.h"
@@ -101,7 +101,7 @@ InlineAsm *generateGarbage(Function *f) {
   //                      0x72, 0x73, 0x74, 0x75, 0x76, 0x77, 0x78, 0x79, 0x7A,
   //                      0x7B, 0x7C, 0x7D, 0x7E, 0x7F, 0xC2, 0xCA, 0xFF, 0x0F};
   while (rand(g) % 16 != 0)
-    s += ".byte " + std::to_string(rand(g) % 256);
+    s += ".byte " + std::to_string(rand(g) % 256) + ";";
   InlineAsm *IA =
       InlineAsm::get(FunctionType::get(Type::getVoidTy(f->getContext()), false),
                      s, "", true, false);
@@ -214,15 +214,16 @@ void link(Module &m, std::string code) {
 }
 
 llvm::PassPluginLibraryInfo getDuplicateBBPluginInfo() {
-  return {LLVM_PLUGIN_API_VERSION, "duplicate-bb", LLVM_VERSION_STRING,
+  return {LLVM_PLUGIN_API_VERSION, "goatfuscator", LLVM_VERSION_STRING,
           [](PassBuilder &PB) {
+            addRIV(PB);
             PB.registerPipelineParsingCallback(
                 [](StringRef Name, PassManager<Function> &FPM,
                    ArrayRef<PassBuilder::PipelineElement>) {
-                  if (Name == "duplicate-bb") {
-                    FPM.addPass(DuplicateBB());
-                    return true;
-                  }
+                  // if (Name == "duplicate-bb") {
+                  //   FPM.addPass(DuplicateBB());
+                  //   return true;
+                  // }
                   if (Name == "bb2func") {
                     addBB2Func(FPM);
                     return true;
@@ -235,10 +236,10 @@ llvm::PassPluginLibraryInfo getDuplicateBBPluginInfo() {
                     addConnect(FPM);
                     return true;
                   }
-                  if (Name == "obfCon") {
-                    addObfCon(FPM);
-                    return true;
-                  };
+                  // if (Name == "obfCon") {
+                  //   addObfCon(FPM);
+                  //   return true;
+                  // };
                   return false;
                 });
             PB.registerPipelineParsingCallback(

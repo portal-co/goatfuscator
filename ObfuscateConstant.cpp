@@ -47,10 +47,10 @@ void addObfCon(llvm::PassManager<llvm::Function> &p) {
   p.addPass(ObfuscateConstant());
 }
 
-void runObfCon(Function &F) {
-  ObfuscateConstant a;
-  a.runOnFunction(F);
-}
+// void runObfCon(Function &F) {
+//   ObfuscateConstant a;
+//   a.runOnFunction(F);
+// }
 
 char ObfuscateConstant::ID = 0;
 // static RegisterPass<ObfuscateConstant> X("obfCon", "Split and obfuscate

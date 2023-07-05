@@ -26,7 +26,7 @@
 //    -------------------------------------------------------------------------
 //
 // REFERENCES:
-//    Based on examples from: 
+//    Based on examples from:
 //    "Building, Testing and Debugging a Simple out-of-tree LLVM Pass", Serge
 //    Guelton and Adrien Guinet, LLVM Dev Meeting 2015
 //
@@ -39,6 +39,7 @@
 #include "llvm/Support/Format.h"
 
 #include <deque>
+#include <iostream>
 
 using namespace llvm;
 
@@ -120,9 +121,8 @@ RIV::Result RIV::run(llvm::Function &F, llvm::FunctionAnalysisManager &FAM) {
   return Res;
 }
 
-PreservedAnalyses
-RIVPrinter::run(Function &Func,
-                              FunctionAnalysisManager &FAM) {
+PreservedAnalyses RIVPrinter::run(Function &Func,
+                                  FunctionAnalysisManager &FAM) {
 
   auto RIVMap = FAM.getResult<RIV>(Func);
 
@@ -160,30 +160,51 @@ void LegacyRIV::getAnalysisUsage(AnalysisUsage &AU) const {
 //-----------------------------------------------------------------------------
 AnalysisKey RIV::Key;
 
-llvm::PassPluginLibraryInfo getRIVPluginInfo() {
-  return {LLVM_PLUGIN_API_VERSION, "riv", LLVM_VERSION_STRING,
-          [](PassBuilder &PB) {
-            // #1 REGISTRATION FOR "opt -passes=print<riv>"
-            PB.registerPipelineParsingCallback(
-                [&](StringRef Name, FunctionPassManager &FPM,
-                    ArrayRef<PassBuilder::PipelineElement>) {
-                  if (Name == "print<riv>") {
-                    FPM.addPass(RIVPrinter(llvm::errs()));
-                    return true;
-                  }
-                  return false;
-                });
-            // #2 REGISTRATION FOR "FAM.getResult<RIV>(Function)"
-            PB.registerAnalysisRegistrationCallback(
-                [](FunctionAnalysisManager &FAM) {
-                  FAM.registerPass([&] { return RIV(); });
-                });
-          }};
-};
+// llvm::PassPluginLibraryInfo getRIVPluginInfo() {
+//   return {LLVM_PLUGIN_API_VERSION, "riv", LLVM_VERSION_STRING,
+//           [](PassBuilder &PB) {
+//             // #1 REGISTRATION FOR "opt -passes=print<riv>"
+//             PB.registerPipelineParsingCallback(
+//                 [&](StringRef Name, FunctionPassManager &FPM,
+//                     ArrayRef<PassBuilder::PipelineElement>) {
+//                   if (Name == "print<riv>") {
+//                     FPM.addPass(RIVPrinter(llvm::errs()));
+//                     return true;
+//                   }
+//                   return false;
+//                 });
+//             // #2 REGISTRATION FOR "FAM.getResult<RIV>(Function)"
+//             PB.registerAnalysisRegistrationCallback(
+//                 [](FunctionAnalysisManager &FAM) {
+//                   FAM.registerPass([&] { return RIV(); });
+//                 });
+//           }};
+// };
 
-extern "C" LLVM_ATTRIBUTE_WEAK ::llvm::PassPluginLibraryInfo
-llvmGetPassPluginInfo() {
-  return getRIVPluginInfo();
+// extern "C" LLVM_ATTRIBUTE_WEAK ::llvm::PassPluginLibraryInfo
+// llvmGetPassPluginInfo() {
+//   return getRIVPluginInfo();
+// }
+
+void addRIV(llvm::PassBuilder &PB) {
+  std::cout << "addRIV" << std::endl;
+  // #1 REGISTRATION FOR "opt -passes=print<riv>"
+  PB.registerPipelineParsingCallback(
+      [&](StringRef Name, FunctionPassManager &FPM,
+          ArrayRef<PassBuilder::PipelineElement>) {
+        if (Name == "print<riv>") {
+          FPM.addPass(RIVPrinter(llvm::errs()));
+          return true;
+        }
+        return false;
+      });
+  // #2 REGISTRATION FOR "FAM.getResult<RIV>(Function)"
+  PB.registerAnalysisRegistrationCallback([](FunctionAnalysisManager &FAM) {
+    FAM.registerPass([&] {
+      std::cout << "addRIVFun" << std::endl;
+      return RIV();
+    });
+  });
 }
 
 //-----------------------------------------------------------------------------

@@ -21,7 +21,7 @@ include_directories(SYSTEM ${LLVM_INCLUDE_DIRS})
 # 2. LLVM-TUTOR BUILD CONFIGURATION
 #===============================================================================
 # Use the same C++ standard as LLVM does
-set(CMAKE_CXX_STANDARD 17 CACHE STRING "")
+set(CMAKE_CXX_STANDARD 23 CACHE STRING "")
 
 # LLVM is normally built without RTTI. Be consistent with that.
 if(NOT LLVM_ENABLE_RTTI)
@@ -33,7 +33,7 @@ include_directories(${CMAKE_SOURCE_DIRECTORY}/3rdparty)
 #===============================================================================
 # 3. ADD THE TARGET
 #===============================================================================
-add_library(Goatf SHARED BB2Func.cpp RIV.cpp DuplicateBB.cpp Merge.cpp Util.cpp Flattening.cpp Connect.cpp)
+add_library(Goatf SHARED BB2Func.cpp RIV.cpp Merge.cpp Util.cpp Flattening.cpp Connect.cpp vm.cpp)
 
 # Allow undefined symbols in shared objects on Darwin (this is the default
 # behaviour on Linux)

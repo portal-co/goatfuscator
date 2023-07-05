@@ -1,20 +1,29 @@
 #include "llvm/IR/Function.h"
 #include "llvm/IR/InlineAsm.h"
+#include "llvm/IR/Instructions.h"
 #include "llvm/IR/PatternMatch.h"
+#include "llvm/Linker/Linker.h"
+#include <cstdlib>
+#include <llvm-16/llvm/ADT/ArrayRef.h>
 #include <llvm-16/llvm/IR/BasicBlock.h>
+#include <llvm-16/llvm/IR/DerivedTypes.h>
 #include <llvm-16/llvm/IR/InstrTypes.h>
 #include <llvm-16/llvm/IR/Instruction.h>
 #include <llvm-16/llvm/IR/Module.h>
 #include <llvm-16/llvm/IR/PassManager.h>
+#include <llvm-16/llvm/Passes/PassBuilder.h>
 #include <llvm-16/llvm/Support/GenericDomTree.h>
-#include "llvm/Linker/Linker.h"
 
-
+#include <map>
 #include <memory>
+#include <string>
+#include <sys/stat.h>
 #include <tuple>
 #include <variant>
 #include <vector>
-#include <sys/stat.h>
+#include <random>
+#include <sstream>
+#include <fstream>
 
 void fixStack(llvm::Function *f);
 
@@ -27,37 +36,39 @@ uint64_t modinv(uint64_t a);
 void addBB2Func(llvm::PassManager<llvm::Function> &);
 void addFlattening(llvm::PassManager<llvm::Function> &);
 void addConnect(llvm::PassManager<llvm::Function> &);
-void addObfCon(llvm::PassManager<llvm::Function> &);
+// void addObfCon(llvm::PassManager<llvm::Function> &);
 void addMerge(llvm::PassManager<llvm::Module> &);
+void addRIV(llvm::PassBuilder &);
 
 void runObfCon(llvm::Function &F);
 void link(llvm::Module &m, std::string code);
-inline bool exists (const std::string& name) {
-  struct stat buffer;   
-  return (stat (name.c_str(), &buffer) == 0); 
+inline bool exists(const std::string &name) {
+  struct stat buffer;
+  return (stat(name.c_str(), &buffer) == 0);
 }
-// struct vmCode {
-//   std::variant<unsigned, llvm::Function *, llvm::Value *> value;
-//   template <typename X> vmCode(X x) : value(x) {}
-// };
-// struct VMCodePass : public llvm::AnalysisInfoMixin<VMCodePass> {
-//   // A map that for every basic block holds the VM code for it
-//   struct CodeInfo {
-//     std::vector<vmCode> code;
-//     unsigned maxSize;
-//     void render(llvm::Function *&);
-//   };
-//   using Result = llvm::MapVector<llvm::BasicBlock const *, CodeInfo>;
-//   Result run(llvm::Function &F, llvm::FunctionAnalysisManager &);
-//   Result buildVM(llvm::Function &F,
-//                  llvm::DomTreeNodeBase<llvm::BasicBlock> *CFGRoot);
-
-// private:
-//   // A special type used by analysis passes to provide an address that
-//   // identifies that particular analysis pass type.
-//   static llvm::AnalysisKey Key;
-//   friend struct llvm::AnalysisInfoMixin<VMCodePass>;
-// };
+inline std::string gen_namespace(std::string x) {
+  std::random_device rd;
+  std::string n = "O_";
+  n += std::to_string(rd());
+  std::string r = "namespace ";
+  r += n;
+  r += "{namespace{";
+  r += x;
+  r += "}}";
+  r += "using namespace ";
+  r += n;
+  r += ";";
+  return r;
+}
+inline std::string read(std::string x) {
+  std::ifstream t(x);
+  std::stringstream buffer;
+  buffer << t.rdbuf();
+  return buffer.str();
+}
+inline std::string goatfDir(std::string x) {
+  return std::string(getenv("GOATF_DIR")) + "/" + x;
+}
 
 template <typename X, typename Y> auto randItem(X x, Y y) {
   auto Iter = x.begin();

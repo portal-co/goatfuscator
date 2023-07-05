@@ -7,6 +7,7 @@
 #include "Util.h"
 
 #include <algorithm>
+#include <iostream>
 #include <llvm-16/llvm/IR/PassManager.h>
 #include <random>
 #include <vector>
@@ -23,10 +24,11 @@ struct Connect : public PassInfoMixin<Connect> {
 
   bool runOnFunction(Function &F);
   PreservedAnalyses run(Function &F, FunctionAnalysisManager &AM) {
-    runOnFunction(F);
-    runObfCon(F);
-    return PreservedAnalyses::none();
+    bool b = runOnFunction(F);
+    // runObfCon(F);
+    return b ? PreservedAnalyses::none() : llvm::PreservedAnalyses::all();
   }
+  static bool isRequired() { return true; }
 };
 } // namespace
 
@@ -36,6 +38,7 @@ char Connect::ID = 0;
 void addConnect(llvm::PassManager<llvm::Function> &m) { m.addPass(Connect()); }
 
 bool Connect::runOnFunction(Function &F) {
+  std::cout << "connecting" << std::endl;
   Function *f = &F;
   std::vector<BasicBlock *> origBB, downBB, allBB;
   std::random_device rd;
@@ -44,6 +47,7 @@ bool Connect::runOnFunction(Function &F) {
   auto i = f->begin();
   for (++i; i != f->end(); ++i) {
     BasicBlock *tmp = &*i;
+    tmp->setName(tmp->getName() + "$");
     origBB.push_back(tmp);
   }
 

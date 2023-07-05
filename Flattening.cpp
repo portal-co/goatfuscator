@@ -24,7 +24,7 @@
 #include "llvm/IR/Instructions.h"
 #include "llvm/Transforms/Utils/LowerSwitch.h"
 
-#include "DuplicateBB.h"
+// #include "DuplicateBB.h"
 #include "Util.h"
 
 #include <algorithm>
@@ -39,8 +39,6 @@ using namespace llvm;
 namespace {
 struct Flattening : public PassInfoMixin<Flattening> {
   static char ID;
-  LowerSwitchPass internal;
-  DuplicateBB internal2;
 
   Flattening() {
     // initializeLowerSwitchLegacyPassPass(*PassRegistry::getPassRegistry());
@@ -53,16 +51,17 @@ struct Flattening : public PassInfoMixin<Flattening> {
   bool runOnFunction(Function &F);
   bool flatten(Function *f);
   PreservedAnalyses run(Function &F, FunctionAnalysisManager &AM) {
-    internal2.run(F, AM);
-    internal.run(F, AM);
-    runOnFunction(F);
-    runObfCon(F);
-    return PreservedAnalyses::none();
+    bool b = runOnFunction(F);
+    // runObfCon(F);
+    return b ? PreservedAnalyses::none() : llvm::PreservedAnalyses::all();
   }
+  static bool isRequired() { return true; }
 };
 } // namespace
 
 void addFlattening(llvm::PassManager<llvm::Function> &f) {
+  f.addPass(LowerSwitchPass());
+  // f.addPass(DuplicateBB());
   f.addPass(Flattening());
 }
 char Flattening::ID = 0;
