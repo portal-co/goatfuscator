@@ -3,6 +3,7 @@
 #include "llvm/IR/Instructions.h"
 #include "llvm/IR/PatternMatch.h"
 #include "llvm/Linker/Linker.h"
+#include <cstdint>
 #include <cstdlib>
 #include <llvm-16/llvm/ADT/ArrayRef.h>
 #include <llvm-16/llvm/IR/BasicBlock.h>
@@ -31,8 +32,10 @@ const uint32_t fnvPrime = 19260817;
 const uint32_t fnvBasis = 0x114514;
 uint32_t fnvHash(const uint32_t data, uint32_t b);
 llvm::InlineAsm *generateGarbage(llvm::Function *f);
+llvm::InlineAsm *generateNull(llvm::Function *f);
 uint32_t randPrime(uint32_t min, uint32_t max);
 uint64_t modinv(uint64_t a);
+uint32_t xr();
 void addBB2Func(llvm::PassManager<llvm::Function> &);
 void addFlattening(llvm::PassManager<llvm::Function> &);
 void addConnect(llvm::PassManager<llvm::Function> &);

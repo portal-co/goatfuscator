@@ -11,6 +11,7 @@
 #include "Util.h"
 
 #include "llvm/IRReader/IRReader.h"
+#include <cstdint>
 #include <iostream>
 #include <llvm-16/llvm/Support/SourceMgr.h>
 #include <llvm/Bitcode/BitcodeReader.h>
@@ -69,16 +70,8 @@ void fixStack(Function *f) {
   } while (tmpReg.size() != 0 || tmpPhi.size() != 0);
 }
 
-InlineAsm *generateGarbage(Function *f) {
-  bool isWA =
-      Triple(f->getParent()->getTargetTriple()).getArch() == Triple::wasm32;
-  isWA = isWA || (Triple(f->getParent()->getTargetTriple()).getArch() ==
-                  Triple::wasm64);
-  if (isWA) {
-    return InlineAsm::get(
-        FunctionType::get(Type::getVoidTy(f->getContext()), false), "", "",
-        true, false);
-  }
+namespace {
+std::string newGarbage(int sample = 16) {
   std::random_device rd;
   std::mt19937 g(rd());
   std::uniform_int_distribution<uint32_t> rand(0, UINT32_MAX);
@@ -100,8 +93,60 @@ InlineAsm *generateGarbage(Function *f) {
   // uint8_t onebyte[] = {0xEB, 0xE9, 0xE8, 0xE3, 0xE2, 0xE1, 0xE0, 0x70, 0x71,
   //                      0x72, 0x73, 0x74, 0x75, 0x76, 0x77, 0x78, 0x79, 0x7A,
   //                      0x7B, 0x7C, 0x7D, 0x7E, 0x7F, 0xC2, 0xCA, 0xFF, 0x0F};
-  while (rand(g) % 16 != 0)
-    s += ".byte " + std::to_string(rand(g) % 256) + ";";
+  while (rand(g) % sample != 0)
+    s += ".byte " + std::to_string(rand(g) % 256) + ";\n";
+  return s;
+}
+} // namespace
+
+InlineAsm *generateGarbage(Function *f) {
+  bool isWA =
+      Triple(f->getParent()->getTargetTriple()).getArch() == Triple::wasm32;
+  isWA = isWA || (Triple(f->getParent()->getTargetTriple()).getArch() ==
+                  Triple::wasm64);
+  if (isWA) {
+    return InlineAsm::get(
+        FunctionType::get(Type::getVoidTy(f->getContext()), false), "", "",
+        true, false);
+  }
+  auto s = newGarbage();
+  InlineAsm *IA =
+      InlineAsm::get(FunctionType::get(Type::getVoidTy(f->getContext()), false),
+                     s, "", true, false);
+  return IA;
+}
+
+InlineAsm *generateNull(Function *f) {
+  bool isWA =
+      Triple(f->getParent()->getTargetTriple()).getArch() == Triple::wasm32;
+  isWA = isWA || (Triple(f->getParent()->getTargetTriple()).getArch() ==
+                  Triple::wasm64);
+  if (isWA) {
+    return InlineAsm::get(
+        FunctionType::get(Type::getVoidTy(f->getContext()), false), "", "",
+        true, false);
+  }
+  std::random_device rd;
+  std::mt19937 g(rd());
+  std::uniform_int_distribution<uint32_t> rand(0, UINT32_MAX);
+  std::string s = "";
+  while (rand(g) % 8 != 0) {
+    uint32_t lid = rand(g);
+    if (Triple(f->getParent()->getTargetTriple()).isX86()) {
+      s += "pushq d";
+      s += std::to_string(lid);
+      s += ";ret;\n";
+      s += newGarbage(8);
+      s += "\nd";
+      s += std::to_string(lid);
+      s += ":\n.quad ";
+      s += "l";
+      s += std::to_string(lid);
+      s += "\nl";
+      s += std::to_string(lid);
+      s += ":\n \n\n";
+    };
+  };
   InlineAsm *IA =
       InlineAsm::get(FunctionType::get(Type::getVoidTy(f->getContext()), false),
                      s, "", true, false);
@@ -197,6 +242,12 @@ uint64_t modinv(uint64_t a) {
     x = (x * (2 - a * x)) % (1ULL << k);
   }
   return x * (2 - a * x);
+}
+
+uint32_t xr() {
+  std::random_device rd;
+  std::mt19937 g(rd());
+  return g();
 }
 
 void link(Module &m, std::string code) {
