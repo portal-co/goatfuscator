@@ -33,7 +33,7 @@ include_directories(${CMAKE_SOURCE_DIRECTORY}/3rdparty)
 #===============================================================================
 # 3. ADD THE TARGET
 #===============================================================================
-add_library(Goatf SHARED BB2Func.cpp RIV.cpp Merge.cpp Util.cpp Flattening.cpp Connect.cpp ObfuscateConstant.cpp vm.cpp)
+add_library(Goatf SHARED BB2Func.cpp RIV.cpp Merge.cpp Util.cpp Connect.cpp ObfuscateConstant.cpp vm.cpp)
 
 # Allow undefined symbols in shared objects on Darwin (this is the default
 # behaviour on Linux)

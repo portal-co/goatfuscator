@@ -82,6 +82,7 @@ bool BB2Func::runOnFunction(Function &F, FunctionAnalysisManager &AM) {
   }
 
   for (BasicBlock *BB : bblist) {
+    addNull(BB);
     std::vector<BasicBlock *> blocks;
     blocks.push_back(BB);
     CodeExtractor CE(blocks);

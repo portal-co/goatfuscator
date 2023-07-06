@@ -8,8 +8,12 @@
 
 #include <algorithm>
 #include <iostream>
+#include <llvm-16/llvm/IR/BasicBlock.h>
 #include <llvm-16/llvm/IR/IRBuilder.h>
+#include <llvm-16/llvm/IR/InstrTypes.h>
+#include <llvm-16/llvm/IR/Instruction.h>
 #include <llvm-16/llvm/IR/PassManager.h>
+#include <map>
 #include <random>
 #include <vector>
 
@@ -84,56 +88,64 @@ bool Connect::runOnFunction(Function &F) {
   for (size_t num = 0; num < origBB.size(); num++) {
     std::shuffle(downBB.begin(), downBB.end(), g);
     BasicBlock *i = origBB[num];
-    auto n = generateNull(f);
-    {
-      IRBuilder b(&*i->getFirstInsertionPt());
-      b.CreateCall(n);
-    }
-    if (i->getTerminator()->getNumSuccessors() == 1) {
-      BasicBlock *destBB = i->getTerminator()->getSuccessor(0);
-      i->getTerminator()->eraseFromParent();
-      BasicBlock *defaultBB =
-          BasicBlock::Create(f->getContext(), "", f, shuffleBB[num]);
-      CallInst::Create(generateGarbage(f), "", defaultBB);
-      new UnreachableInst(f->getContext(), defaultBB);
+    addNull(i);
+    // if (i->getTerminator()->getNumSuccessors() == 1) {
+    BasicBlock *destBB = i->getTerminator()->getSuccessor(0);
+    i->getTerminator()->eraseFromParent();
+    BasicBlock *defaultBB =
+        BasicBlock::Create(f->getContext(), "", f, shuffleBB[num]);
+    // CallInst::Create(generateGarbage(f), "", defaultBB);
+    new UnreachableInst(f->getContext(), defaultBB);
 
-      std::uniform_int_distribution<uint32_t> rand(0, UINT32_MAX);
-      ConstantInt *c0 =
-          ConstantInt::get(IntegerType::get(i->getContext(), 32), 0);
-      ConstantInt *c1 =
-          ConstantInt::get(IntegerType::get(i->getContext(), 32), 1);
-      SwitchInst *switchII = SwitchInst::Create(c0, defaultBB, 0, i);
-      int garbageCap = downBB.size() / 4;
-      garbageCap = garbageCap > 1 ? garbageCap : 1;
-      for (BasicBlock *j : downBB) {
-        ConstantInt *numCase = cast<ConstantInt>(
-            ConstantInt::get(switchII->getCondition()->getType(), rand(g)));
-        if (j == destBB) {
-          BinaryOperator *tempVal = nullptr;
-          std::vector<Instruction::BinaryOps> vecBin{
-              BinaryOperator::Xor, BinaryOperator::Add, BinaryOperator::Or};
-          if (rand(g) % 2) {
-            std::vector<Instruction::BinaryOps> vec1Bin{BinaryOperator::UDiv,
-                                                        BinaryOperator::Mul,
-                                                        BinaryOperator::SDiv};
-            tempVal = BinaryOperator::Create(vecBin[rand(g) % (vecBin.size())],
-                                             c0, c0, "", switchII);
-            tempVal->setOperand(rand(g) % 2, c1);
-            tempVal =
-                BinaryOperator::Create(vec1Bin[rand(g) % (vec1Bin.size())],
-                                       numCase, tempVal, "", switchII);
-          } else {
-            tempVal = BinaryOperator::Create(vecBin[rand(g) % (vecBin.size())],
-                                             c0, c0, "", switchII);
-            tempVal->setOperand(rand(g) % 2, numCase);
-          }
-          switchII->setCondition(tempVal);
-          switchII->addCase(numCase, j);
-        } else if (rand(g) % garbageCap == 0) {
-          switchII->addCase(numCase, j);
-        }
+    std::uniform_int_distribution<uint32_t> rand(0, UINT32_MAX);
+    ConstantInt *c0 =
+        ConstantInt::get(IntegerType::get(i->getContext(), 32), 0);
+    ConstantInt *c1 =
+        ConstantInt::get(IntegerType::get(i->getContext(), 32), 1);
+    int garbageCap = downBB.size() / 4;
+    garbageCap = garbageCap > 1 ? garbageCap : 1;
+    std::map<BasicBlock *, ConstantInt *> ii;
+    ConstantInt *jj;
+    for (BasicBlock *j : downBB) {
+      ConstantInt *numCase = cast<ConstantInt>(
+          ConstantInt::get(c0->getType(), rand(g)));
+      if (j == destBB) {
+        // BinaryOperator *tempVal = nullptr;
+        // std::vector<Instruction::BinaryOps>
+        // vecBin{BinaryOperator::Xor,BinaryOperator::Add,BinaryOperator::Or};
+        // // if (rand(g) % 2) {
+        //   std::vector<Instruction::BinaryOps> vec1Bin{BinaryOperator::UDiv,
+        //                                               BinaryOperator::Mul,
+        //                                               BinaryOperator::SDiv};
+        //   tempVal = BinaryOperator::Create(vecBin[rand(g) %
+        //   (vecBin.size())],
+        //                                    c0, c0, "", switchII);
+        //   tempVal->setOperand(rand(g) % 2, c1);
+        //   tempVal =
+        //       BinaryOperator::Create(vec1Bin[rand(g) % (vec1Bin.size())],
+        //                              numCase, tempVal, "", switchII);
+        // } else {
+        // IRBuilder b(switchII);
+        // tempVal = BinaryOperator::Create(vecBin[rand(g) % (vecBin.size())],
+        //  c0, c0, "", switchII);
+        // // tempVal = b.CreateBinOp(vecBin[0], c0, numCase);
+        // // // tempVal->setOperand(rand(g) % 2, numCase);
+        // // tempVal = b.CreateBinOp(vecBin[0], c0, tempVal);
+        // }
+        // switchII->setCondition(numCase);
+        jj = numCase;
+        // switchII->addCase(numCase, j);
+        ii[j] = numCase;
+      } else if (rand(g) % garbageCap == 0) {
+        // switchII->addCase(numCase, j);
+        ii[j] = numCase;
       }
     }
+    SwitchInst *switchII = SwitchInst::Create(jj, defaultBB, downBB.size(), i);
+    for (auto [b, k] : ii) {
+      switchII->addCase(k, b);
+    }
+    // }
   }
 
   fixStack(f);

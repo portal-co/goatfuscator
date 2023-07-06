@@ -15,16 +15,16 @@
 #include <llvm-16/llvm/Passes/PassBuilder.h>
 #include <llvm-16/llvm/Support/GenericDomTree.h>
 
+#include <fstream>
 #include <map>
 #include <memory>
+#include <random>
+#include <sstream>
 #include <string>
 #include <sys/stat.h>
 #include <tuple>
 #include <variant>
 #include <vector>
-#include <random>
-#include <sstream>
-#include <fstream>
 
 void fixStack(llvm::Function *f);
 
@@ -37,11 +37,18 @@ uint32_t randPrime(uint32_t min, uint32_t max);
 uint64_t modinv(uint64_t a);
 uint32_t xr();
 void addBB2Func(llvm::PassManager<llvm::Function> &);
-void addFlattening(llvm::PassManager<llvm::Function> &);
+// void addFlattening(llvm::PassManager<llvm::Function> &);
 void addConnect(llvm::PassManager<llvm::Function> &);
 void addObfCon(llvm::PassManager<llvm::Function> &);
 void addMerge(llvm::PassManager<llvm::Module> &);
 void addRIV(llvm::PassBuilder &);
+inline void addNull(llvm::BasicBlock *i) {
+  auto n = generateNull(i->getParent());
+  {
+    llvm::IRBuilder b(&*i->getFirstInsertionPt());
+    b.CreateCall(n);
+  }
+}
 
 void runObfCon(llvm::Function &F);
 void link(llvm::Module &m, std::string code);

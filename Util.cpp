@@ -279,10 +279,10 @@ llvm::PassPluginLibraryInfo getDuplicateBBPluginInfo() {
                     addBB2Func(FPM);
                     return true;
                   }
-                  if (Name == "flattening") {
-                    addFlattening(FPM);
-                    return true;
-                  }
+                  // if (Name == "flattening") {
+                  //   addFlattening(FPM);
+                  //   return true;
+                  // }
                   if (Name == "connect") {
                     addConnect(FPM);
                     return true;
