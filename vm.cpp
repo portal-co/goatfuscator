@@ -1,5 +1,6 @@
 #include "Util.h"
 #include <cstdint>
+#include <exception>
 #include <llvm-16/llvm/IR/BasicBlock.h>
 #include <llvm-16/llvm/IR/Instruction.h>
 #include <llvm-16/llvm/Support/Casting.h>
@@ -8,17 +9,14 @@
 #include <tuple>
 #include <vector>
 using namespace llvm;
-namespace {};
+namespace {
+struct non_vmable : std::exception {};
+}; // namespace
 uint32_t emit(Value *v, std::string &y, BasicBlock *tbb) {
   uint32_t x = xr();
   Instruction *i = dyn_cast<Instruction>(v);
   if (i == nullptr || i->getParent() != tbb) {
-    y += "c.push_back([=](v &v){v.p(";
-    y += std::to_string(x);
-    y += ",";
-    y += v->getName();
-    y += ");v.r();})";
-    return x;
+    throw non_vmable();
   }
   std::vector<uint32_t> d;
   for (auto j : i->operand_values()) {
@@ -57,6 +55,8 @@ uint32_t emit(Value *v, std::string &y, BasicBlock *tbb) {
     case Instruction::BinaryOps::And:
       b = "eand";
       break;
+    default:
+      throw non_vmable();
     };
     y += "c.push_back(&";
     y += b;
