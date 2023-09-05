@@ -3,6 +3,7 @@
 #include "llvm/IR/Instructions.h"
 #include "llvm/IR/PatternMatch.h"
 #include "llvm/Linker/Linker.h"
+#include "llvm/Transforms/Utils/BasicBlockUtils.h"
 #include <cstdint>
 #include <cstdlib>
 #include <llvm-16/llvm/ADT/ArrayRef.h>
@@ -40,8 +41,14 @@ void addBB2Func(llvm::PassManager<llvm::Function> &);
 // void addFlattening(llvm::PassManager<llvm::Function> &);
 void addConnect(llvm::PassManager<llvm::Function> &);
 void addObfCon(llvm::PassManager<llvm::Function> &);
+void addDumbo(llvm::PassManager<llvm::Function> &);
 void addMerge(llvm::PassManager<llvm::Module> &);
 void addRIV(llvm::PassBuilder &);
+void unCringify(llvm::Function *);
+inline void ReplaceInstWithValue(llvm::Instruction *inst, llvm::Value *to) {
+  llvm::BasicBlock::iterator BI(inst);
+  llvm::ReplaceInstWithValue(BI, to);
+}
 inline void addNull(llvm::BasicBlock *i) {
   auto n = generateNull(i->getParent());
   {

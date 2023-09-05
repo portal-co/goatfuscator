@@ -5,6 +5,7 @@
 #include "llvm/Support/raw_ostream.h"
 #include "llvm/Transforms/Utils/Cloning.h"
 #include "llvm/IR/Constants.h"
+#include "Util.h"
 
 #include <llvm/IR/PassManager.h>
 #include <llvm/PassInfo.h>
@@ -18,10 +19,11 @@ namespace {
     static char ID;
     Merge(){}
 
-    bool runOnModule(Module &M);
+    PreservedAnalyses runOnModule(Module &M, ModuleAnalysisManager &AM);
       PreservedAnalyses run(Module &F, ModuleAnalysisManager &AM){
-    bool b = runOnModule(F);
-    return b ? PreservedAnalyses::none() : llvm::PreservedAnalyses::all();
+    auto b = runOnModule(F,AM);
+    // return b ? PreservedAnalyses::none() : llvm::PreservedAnalyses::all();
+    return b;
   }
 
     std::vector<Function *> mergeList;
@@ -36,7 +38,7 @@ void addMerge(llvm::PassManager<llvm::Module>& p){
   p.addPass(Merge());
 }
 
-bool Merge::runOnModule(Module &M){
+PreservedAnalyses Merge::runOnModule(Module &M, ModuleAnalysisManager &AM){
   for(Function &F: M){
     if(F.getLinkage() == GlobalValue::InternalLinkage && !F.isVarArg()
           && (F.getReturnType()->isIntOrPtrTy() || F.getReturnType()->isVoidTy())){
@@ -45,7 +47,7 @@ bool Merge::runOnModule(Module &M){
   }
 
   if(mergeList.size() < 2)
-    return false;
+    return llvm::PreservedAnalyses::all();
 
   size_t retBitLen = 64;
   std::string funcName = "";
@@ -93,6 +95,7 @@ bool Merge::runOnModule(Module &M){
   FunctionType *funcTy = FunctionType::get(retTy, paramTy, false);
   Function *newFunction = Function::Create(funcTy, GlobalValue::InternalLinkage, funcName + "merge", M);
   newFunction->addFnAttr(Attribute::NoInline);
+  unCringify(newFunction);
 
   for(size_t i = 0; i < mergeList.size(); i++){
     std::vector<CallInst*> vecCall;
@@ -251,6 +254,10 @@ bool Merge::runOnModule(Module &M){
       errs() << mergeList[i]->getName() << " Not Dead Yet\n";
     }
   }
-
-  return true;
+  FunctionPassManager pm;
+  addConnect(pm);
+  addObfCon(pm);
+  FunctionAnalysisManager &AMF = AM.getResult<FunctionAnalysisManagerModuleProxy>(M).getManager();
+  pm.run(*newFunction, AMF);
+  return PreservedAnalyses::none();
 }

@@ -13,7 +13,7 @@ hello.obf.bc: hello.bc
 	opt-16 -load-pass-plugin=./build/libGoatf.so  -passes="function(bb2func,connect,obfCon),merge" hello.bc -o hello.obf.bc
 
 hello.obf: hello.obf.bc
-	clang-16 -no-pie -O3 ./hello.obf.bc -o hello.obf
+	clang-16 -O3 ./hello.obf.bc -o hello.obf
 
 run: hello.obf
 	./hello.obf

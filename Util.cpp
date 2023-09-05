@@ -13,6 +13,9 @@
 #include "llvm/IRReader/IRReader.h"
 #include <cstdint>
 #include <iostream>
+#include <llvm-16/llvm/IR/BasicBlock.h>
+#include <llvm-16/llvm/IR/Function.h>
+#include <llvm-16/llvm/Support/Casting.h>
 #include <llvm-16/llvm/Support/SourceMgr.h>
 #include <llvm/Bitcode/BitcodeReader.h>
 #include <llvm/IR/PassManager.h>
@@ -21,6 +24,29 @@
 #include <string>
 
 using namespace llvm;
+void unCringify(llvm::Function *f) {
+  bool hk = f->getName() == "HikariIndirectBranchTargetWrapper";
+  llvm::Function *hkd = f;
+  for (auto &b : *f) {
+    for (auto &i : b) {
+      llvm::CallInst *d = dyn_cast<llvm::CallInst>(&i);
+      if (d) {
+        llvm::Function *f = d->getCalledFunction();
+        if (f) {
+          auto n = f->getName();
+          // if (n == "HikariIndirectBranchTargetWrapper"){
+          //   hk = true; // Cringe
+          //   hkd = f;
+          // }
+        }
+      }
+    }
+  }
+  if(hk){
+    
+  }
+}
+
 bool valueEscapes(Instruction *Inst) {
   BasicBlock *BB = Inst->getParent();
   for (Value::use_iterator UI = Inst->use_begin(), E = Inst->use_end(); UI != E;
@@ -132,19 +158,37 @@ InlineAsm *generateNull(Function *f) {
   std::string s = "";
   while (rand(g) % 8 != 0) {
     uint32_t lid = rand(g);
+    std::string lt = std::to_string(lid);
+    for(char &c: lt)c += 'a' - '0';
     if (Triple(f->getParent()->getTargetTriple()).isX86()) {
-      s += "pushq d";
-      s += std::to_string(lid);
-      s += ";ret;\n";
-      s += newGarbage(8);
-      s += "\nd";
-      s += std::to_string(lid);
-      s += ":\n.quad ";
-      s += "l";
-      s += std::to_string(lid);
-      s += "\nl";
-      s += std::to_string(lid);
-      s += ":\n \n\n";
+      switch (rand(g) % 2) {
+      case 0:
+        s += "push %rax;lea l";
+        s += lt;
+        s += "(%rip), %rax;push %rax;ret;\n";
+        s += newGarbage(8);
+        // s += "\nd";
+        // s += std::to_string(lid);
+        // s += ":\n.pushsection .data\n.quad ";
+        // s += "l";
+        // s += std::to_string(lid);
+        s += "l";
+        s += lt;
+        s += ":\npop %rax\n\n";
+        break;
+      case 1:
+        s += "push %rax;call l";
+        s += lt;
+        s += ";\n";
+        s += newGarbage(8);
+        // s += "\n.set d";
+        // s += lt;
+        // s += ", 8";
+        s += "\nl";
+        s += lt;
+        s += ":\npop %rax\npop %rax\n";
+        break;
+      };
     };
   };
   InlineAsm *IA =

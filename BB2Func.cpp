@@ -90,6 +90,7 @@ bool BB2Func::runOnFunction(Function &F, FunctionAnalysisManager &AM) {
       Function *G = CE.extractCodeRegion(cache);
       // if(virtualize)AM.getResult<VMCodePass>(F)[BB].render(G);
       G->addFnAttr(Attribute::NoInline);
+      unCringify(G);
       modified = true;
     }else{
       std::cout << "not eleigible" << std::endl;

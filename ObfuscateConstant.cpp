@@ -240,9 +240,13 @@ Value *ObfuscateConstant::createExpression(Value *x, const uint32_t p,
            *prime = ConstantInt::get(IntermediaryType, p),
            *OverflowMask = ConstantInt::get(IntermediaryType, 0xFF);
 
-  auto l = r.lookup(Builder.GetInsertBlock());
+  // auto l = r.lookup(Builder.GetInsertBlock());
 
-  Value *any = RandAny(Generator) % 2 ? any_ : l.size() ? randItem(l, Generator) : any_;
+      std::uniform_int_distribution<size_t> Rand(0, IntegerVect.size() - 1);
+
+  Value *any = any_;
+  // while(!any || any->getType() != IntermediaryType)any = RandAny(Generator) % 2 ? any_ : IntegerVect.size() ? randItem(IntegerVect, Generator) : any_;
+  // any = Builder.CreateAnd(any, ConstantInt::get(IntermediaryType, 255));
 
   Value *temp = Builder.CreateOr(x, any);
   temp = Builder.CreateAnd(OverflowMask, temp);

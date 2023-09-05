@@ -30,10 +30,16 @@ endif()
 
 include_directories(${CMAKE_SOURCE_DIRECTORY}/3rdparty)
 
+find_package(OpenSSL)
+add_definitions(${OPENSSL_DEFINITIONS})
+
 #===============================================================================
 # 3. ADD THE TARGET
 #===============================================================================
-add_library(Goatf SHARED BB2Func.cpp RIV.cpp Merge.cpp Util.cpp Connect.cpp ObfuscateConstant.cpp vm.cpp)
+add_library(Goatf SHARED BB2Func.cpp RIV.cpp Merge.cpp Util.cpp Connect.cpp ObfuscateConstant.cpp vm.cpp Dumbo.cpp)
+
+target_include_directories(Goatf PRIVATE ${OPENSSL_INCLUDE_DIRS})
+target_link_libraries(Goatf ${OPENSSL_LIBRARIES})
 
 # Allow undefined symbols in shared objects on Darwin (this is the default
 # behaviour on Linux)
