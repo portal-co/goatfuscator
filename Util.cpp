@@ -7,7 +7,7 @@
 #include "llvm/IR/Instructions.h"
 
 #include "3rdparty/pstream.h"
-// #include "DuplicateBB.h"
+#include "DuplicateBB.h"
 #include "Util.h"
 
 #include "llvm/IRReader/IRReader.h"
@@ -315,10 +315,10 @@ llvm::PassPluginLibraryInfo getDuplicateBBPluginInfo() {
             PB.registerPipelineParsingCallback(
                 [](StringRef Name, PassManager<Function> &FPM,
                    ArrayRef<PassBuilder::PipelineElement>) {
-                  // if (Name == "duplicate-bb") {
-                  //   FPM.addPass(DuplicateBB());
-                  //   return true;
-                  // }
+                  if (Name == "duplicate-bb") {
+                    FPM.addPass(DuplicateBB());
+                    return true;
+                  }
                   if (Name == "bb2func") {
                     addBB2Func(FPM);
                     return true;
