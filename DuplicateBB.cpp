@@ -131,36 +131,91 @@ DuplicateBB::findBBsToDuplicate(Function &F, const RIV::Result &RIVResult) {
       continue;
     }
 
-    // Get a random context value from the RIV set
-    auto Iter = ReachableValues.begin();
-    std::uniform_int_distribution<> Dist(0, ReachableValuesCount - 1);
-    std::advance(Iter, Dist(RNG));
+    // // Get a random context value from the RIV set
+    // auto Iter = ReachableValues.begin();
+    // std::uniform_int_distribution<> Dist(0, ReachableValuesCount - 1);
+    // std::advance(Iter, Dist(RNG));
 
-    if (dyn_cast<GlobalValue>(*Iter)) {
-      LLVM_DEBUG(errs() << "Random context value is a global variable. "
-                        << "Skipping this BB\n");
-      continue;
-    }
+    // if (dyn_cast<GlobalValue>(*Iter)) {
+    //   LLVM_DEBUG(errs() << "Random context value is a global variable. "
+    //                     << "Skipping this BB\n");
+    //   continue;
+    // }
 
-    LLVM_DEBUG(errs() << "Random context value: " << **Iter << "\n");
+    // LLVM_DEBUG(errs() << "Random context value: " << **Iter << "\n");
 
     // Store the binding between the current BB and the context variable that
     // will be used for the `if-then-else` construct.
-    BlocksToDuplicate.emplace_back(&BB, *Iter);
+    BlocksToDuplicate.emplace_back(&BB, ReachableValues);
   }
 
   return BlocksToDuplicate;
 }
 
-void DuplicateBB::cloneBB(BasicBlock &BB, Value *ContextValue,
+void DuplicateBB::cloneBB(BasicBlock &BB,
+                          llvm::SmallPtrSet<llvm::Value *, 8> ReachableValues,
                           ValueToPhiMap &ReMapper) {
+  std::random_device RD;
+  std::mt19937_64 RNG(RD());
+  auto pull = [&]() -> llvm::Value * {
+    while (1) {
+      auto Iter = ReachableValues.begin();
+      std::uniform_int_distribution<> Dist(0, ReachableValues.size() - 1);
+      std::advance(Iter, Dist(RNG));
+
+      if (dyn_cast<GlobalValue>(*Iter)) {
+        LLVM_DEBUG(errs() << "Random context value is a global variable. "
+                          << "Skipping this BB\n");
+        continue;
+      }
+      return ReMapper.count(*Iter) ? ReMapper[*Iter] : *Iter;
+    }
+  };
   // Don't duplicate Phi nodes - start right after them
   Instruction *BBHead = BB.getFirstNonPHI();
 
   // Create the condition for 'if-then-else'
   IRBuilder<> Builder(BBHead);
-  Value *Cond = Builder.CreateIsNull(
-      ReMapper.count(ContextValue) ? ReMapper[ContextValue] : ContextValue);
+  Value *Cond;
+  std::uniform_int_distribution<> Dist(0, 9);
+#define CMP(m)                                                                 \
+  {                                                                            \
+    auto pl = pull();                                                          \
+    Cond = m(pl, Builder.CreateIntCast(pull(), pl->getType(), Dist(RNG) % 2)); \
+  };
+  switch (Dist(RNG)) {
+  case 0:
+    CMP(Builder.CreateICmpEQ);
+    break;
+  case 1:
+    CMP(Builder.CreateICmpNE);
+    break;
+  case 2:
+    CMP(Builder.CreateICmpUGT);
+    break;
+  case 3:
+    CMP(Builder.CreateICmpSGT);
+    break;
+  case 4:
+    CMP(Builder.CreateICmpUGE);
+    break;
+  case 5:
+    CMP(Builder.CreateICmpSGE);
+    break;
+  case 6:
+    CMP(Builder.CreateICmpULT);
+    break;
+  case 7:
+    CMP(Builder.CreateICmpSLT);
+    break;
+  case 8:
+    CMP(Builder.CreateICmpULE);
+    break;
+  case 9:
+    CMP(Builder.CreateICmpSLE);
+    break;
+  }
+  #undef CMP
 
   // Create and insert the 'if-else' blocks. At this point both blocks are
   // trivial and contain only one terminator instruction branching to BB's
@@ -285,7 +340,6 @@ bool LegacyDuplicateBB::runOnFunction(llvm::Function &F) {
 //------------------------------------------------------------------------------
 // New PM Registration
 //------------------------------------------------------------------------------
-
 
 //------------------------------------------------------------------------------
 // Legacy PM Registration

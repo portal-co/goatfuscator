@@ -153,40 +153,31 @@ InlineAsm *generateNull(Function *f) {
         true, false);
   }
   std::random_device rd;
-  std::mt19937 g(rd());
-  std::uniform_int_distribution<uint32_t> rand(0, UINT32_MAX);
+  std::mt19937_64 g(rd());
   std::string s = "";
-  while (rand(g) % 8 != 0) {
-    uint32_t lid = rand(g);
+  while (g() % 8 != 0) {
+    uint64_t lid = g();
     std::string lt = std::to_string(lid);
     for(char &c: lt)c += 'a' - '0';
     if (Triple(f->getParent()->getTargetTriple()).isX86()) {
-      switch (rand(g) % 2) {
+      switch (g() % 2) {
       case 0:
-        s += "push %rax;lea l";
-        s += lt;
-        s += "(%rip), %rax;push %rax;ret;\n";
+        s += "push %rax;lea 1f(%rip), %rax;push %rax;ret;\n";
         s += newGarbage(8);
         // s += "\nd";
         // s += std::to_string(lid);
         // s += ":\n.pushsection .data\n.quad ";
         // s += "l";
         // s += std::to_string(lid);
-        s += "l";
-        s += lt;
-        s += ":\npop %rax\n\n";
+        s += "1:\npop %rax\n\n";
         break;
       case 1:
-        s += "push %rax;call l";
-        s += lt;
-        s += ";\n";
+        s += "push %rax;call 1f;\n";
         s += newGarbage(8);
         // s += "\n.set d";
         // s += lt;
         // s += ", 8";
-        s += "\nl";
-        s += lt;
-        s += ":\npop %rax\npop %rax\n";
+        s += "1:\npop %rax\npop %rax\n";
         break;
       };
     };

@@ -29,7 +29,7 @@ struct DuplicateBB : public llvm::PassInfoMixin<DuplicateBB> {
   // BasicBlock) that's reachable in BB. The Value that BB is mapped to is used
   // in the `if-then-else` construct when cloning BB.
   using BBToSingleRIVMap =
-      std::vector<std::tuple<llvm::BasicBlock *, llvm::Value *>>;
+      std::vector<std::tuple<llvm::BasicBlock *,  llvm::SmallPtrSet<llvm::Value *, 8>>>;
   // Maps a Value before duplication to a Phi node that merges the
   // corresponding values after duplication/cloning.
   using ValueToPhiMap = std::map<llvm::Value *, llvm::Value *>;
@@ -42,7 +42,7 @@ struct DuplicateBB : public llvm::PassInfoMixin<DuplicateBB> {
   //  * injects an `if-then-else` construct using ContextValue
   //  * duplicates BB
   //  * adds PHI nodes as required
-  void cloneBB(llvm::BasicBlock &BB, llvm::Value *ContextValue,
+  void cloneBB(llvm::BasicBlock &BB,  llvm::SmallPtrSet<llvm::Value *, 8> ContextValue,
                ValueToPhiMap &ReMapper);
 
   unsigned DuplicateBBCount = 0;
