@@ -2,8 +2,8 @@
 #include "llvm/Support/raw_ostream.h"
 
 #include "Util.h"
-#include <llvm-16/llvm/IR/Instructions.h>
-#include <llvm-16/llvm/IR/PassManager.h>
+#include <llvm/IR/Instructions.h>
+#include <llvm/IR/PassManager.h>
 #include <openssl/rsa.h>
 using namespace llvm;
 namespace {

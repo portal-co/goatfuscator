@@ -6,15 +6,15 @@
 #include "llvm/Transforms/Utils/BasicBlockUtils.h"
 #include <cstdint>
 #include <cstdlib>
-#include <llvm-16/llvm/ADT/ArrayRef.h>
-#include <llvm-16/llvm/IR/BasicBlock.h>
-#include <llvm-16/llvm/IR/DerivedTypes.h>
-#include <llvm-16/llvm/IR/InstrTypes.h>
-#include <llvm-16/llvm/IR/Instruction.h>
-#include <llvm-16/llvm/IR/Module.h>
-#include <llvm-16/llvm/IR/PassManager.h>
-#include <llvm-16/llvm/Passes/PassBuilder.h>
-#include <llvm-16/llvm/Support/GenericDomTree.h>
+#include <llvm/ADT/ArrayRef.h>
+#include <llvm/IR/BasicBlock.h>
+#include <llvm/IR/DerivedTypes.h>
+#include <llvm/IR/InstrTypes.h>
+#include <llvm/IR/Instruction.h>
+#include <llvm/IR/Module.h>
+#include <llvm/IR/PassManager.h>
+#include <llvm/Passes/PassBuilder.h>
+#include <llvm/Support/GenericDomTree.h>
 
 #include <fstream>
 #include <map>
@@ -93,66 +93,66 @@ template <typename X, typename Y> auto randItem(X x, Y y) {
   std::advance(Iter, Dist(y));
   return *Iter;
 }
-namespace llvm {
-//===----------------------------------------------------------------------===//
-// Matcher for any binary operator.
-//
-template <typename LHS_t, typename RHS_t, bool Commutable = false>
-struct AnyBinaryOp_xmatch {
-  LHS_t L;
-  RHS_t R;
-  Instruction::BinaryOps &Ops;
+// namespace llvm {
+// //===----------------------------------------------------------------------===//
+// // Matcher for any binary operator.
+// //
+// template <typename LHS_t, typename RHS_t, bool Commutable = false>
+// struct AnyBinaryOp_xmatch {
+//   LHS_t L;
+//   RHS_t R;
+//   Instruction::BinaryOps &Ops;
 
-  // The evaluation order is always stable, regardless of Commutability.
-  // The LHS is always matched first.
-  AnyBinaryOp_xmatch(const LHS_t &LHS, const RHS_t &RHS,
-                     Instruction::BinaryOps &o)
-      : L(LHS), R(RHS), Ops(o) {}
+//   // The evaluation order is always stable, regardless of Commutability.
+//   // The LHS is always matched first.
+//   AnyBinaryOp_xmatch(const LHS_t &LHS, const RHS_t &RHS,
+//                      Instruction::BinaryOps &o)
+//       : L(LHS), R(RHS), Ops(o) {}
 
-  template <typename OpTy> bool match(OpTy *V) {
-    if (auto *I = dyn_cast<BinaryOperator>(V)) {
+//   template <typename OpTy> bool match(OpTy *V) {
+//     if (auto *I = dyn_cast<BinaryOperator>(V)) {
 
-      auto b = (L.match(I->getOperand(0)) && R.match(I->getOperand(1))) ||
-               (Commutable && L.match(I->getOperand(1)) &&
-                R.match(I->getOperand(0)));
-      if (b)
-        Ops = I.getOpcode();
-      return b;
-    }
-    return false;
-  }
-};
+//       auto b = (L.match(I->getOperand(0)) && R.match(I->getOperand(1))) ||
+//                (Commutable && L.match(I->getOperand(1)) &&
+//                 R.match(I->getOperand(0)));
+//       if (b)
+//         Ops = I.getOpcode();
+//       return b;
+//     }
+//     return false;
+//   }
+// };
 
-template <typename LHS, typename RHS>
-inline AnyBinaryOp_xmatch<LHS, RHS> m_BinOp(const LHS &L, const RHS &R,
-                                            Instruction::BinaryOps &o) {
-  return AnyBinaryOp_xmatch<LHS, RHS>(L, R, o);
-}
+// template <typename LHS, typename RHS>
+// inline AnyBinaryOp_xmatch<LHS, RHS> m_BinOp(const LHS &L, const RHS &R,
+//                                             Instruction::BinaryOps &o) {
+//   return AnyBinaryOp_xmatch<LHS, RHS>(L, R, o);
+// }
 
-//===----------------------------------------------------------------------===//
-// Matcher for any unary operator.
-// TODO fuse unary, binary matcher into n-ary matcher
-//
-template <typename OP_t> struct AnyUnaryOp_xmatch {
-  OP_t X;
-  Instruction::UnaryOps &Ops;
+// //===----------------------------------------------------------------------===//
+// // Matcher for any unary operator.
+// // TODO fuse unary, binary matcher into n-ary matcher
+// //
+// template <typename OP_t> struct AnyUnaryOp_xmatch {
+//   OP_t X;
+//   Instruction::UnaryOps &Ops;
 
-  AnyUnaryOp_xmatch(const OP_t &X, Instruction::UnaryOps &Ops)
-      : X(X), Ops(Ops) {}
+//   AnyUnaryOp_xmatch(const OP_t &X, Instruction::UnaryOps &Ops)
+//       : X(X), Ops(Ops) {}
 
-  template <typename OpTy> bool match(OpTy *V) {
-    if (auto *I = dyn_cast<UnaryOperator>(V))
-      if (X.match(I->getOperand(0))) {
-        Ops = I->getOpcode();
-        return true;
-      };
-    return false;
-  }
-};
+//   template <typename OpTy> bool match(OpTy *V) {
+//     if (auto *I = dyn_cast<UnaryOperator>(V))
+//       if (X.match(I->getOperand(0))) {
+//         Ops = I->getOpcode();
+//         return true;
+//       };
+//     return false;
+//   }
+// };
 
-template <typename OP_t>
-inline AnyUnaryOp_xmatch<OP_t> m_UnOp(const OP_t &X,
-                                      Instruction::UnaryOps &Ops) {
-  return AnyUnaryOp_xmatch<OP_t>(X, Ops);
-}
-} // namespace llvm
+// template <typename OP_t>
+// inline AnyUnaryOp_xmatch<OP_t> m_UnOp(const OP_t &X,
+//                                       Instruction::UnaryOps &Ops) {
+//   return AnyUnaryOp_xmatch<OP_t>(X, Ops);
+// }
+// } // namespace llvm

@@ -13,10 +13,10 @@
 #include "llvm/IRReader/IRReader.h"
 #include <cstdint>
 #include <iostream>
-#include <llvm-16/llvm/IR/BasicBlock.h>
-#include <llvm-16/llvm/IR/Function.h>
-#include <llvm-16/llvm/Support/Casting.h>
-#include <llvm-16/llvm/Support/SourceMgr.h>
+#include <llvm/IR/BasicBlock.h>
+#include <llvm/IR/Function.h>
+#include <llvm/Support/Casting.h>
+#include <llvm/Support/SourceMgr.h>
 #include <llvm/Bitcode/BitcodeReader.h>
 #include <llvm/IR/PassManager.h>
 #include <llvm/Passes/PassPlugin.h>

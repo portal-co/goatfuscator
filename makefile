@@ -1,5 +1,5 @@
 build/build.ninja: $(shell find .)
-	cmake -S. -Bbuild -GNinja
+	cmake -DCMAKE_EXPORT_COMPILE_COMMANDS=1 -S. -Bbuild -GNinja
 
 build/stamp: build/build.ninja
 	ninja -C build
@@ -7,13 +7,13 @@ build/stamp: build/build.ninja
 # -passes="bb2func,flatenning,connect,obfCon"
 
 hello.bc: hello.c build/stamp
-	clang-16 -O2 hello.c -emit-llvm -c -o hello.bc
+	clang-17 -O2 hello.c -emit-llvm -c -o hello.bc
 
 hello.obf.bc: hello.bc
-	opt-16 -load-pass-plugin=./build/libGoatf.so  -passes="function(bb2func,connect,obfCon,duplicate-bb),merge" hello.bc -o hello.obf.bc
+	opt-17 -load-pass-plugin=./build/libGoatf.so  -passes="function(bb2func,connect,obfCon,duplicate-bb),merge" hello.bc -o hello.obf.bc
 
 hello.obf: hello.obf.bc
-	clang-16 -O3 ./hello.obf.bc -o hello.obf
+	clang-17 -O3 ./hello.obf.bc -o hello.obf
 
 run: hello.obf
 	./hello.obf

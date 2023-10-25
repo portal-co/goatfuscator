@@ -8,11 +8,11 @@
 
 #include <algorithm>
 #include <iostream>
-#include <llvm-16/llvm/IR/BasicBlock.h>
-#include <llvm-16/llvm/IR/IRBuilder.h>
-#include <llvm-16/llvm/IR/InstrTypes.h>
-#include <llvm-16/llvm/IR/Instruction.h>
-#include <llvm-16/llvm/IR/PassManager.h>
+#include <llvm/IR/BasicBlock.h>
+#include <llvm/IR/IRBuilder.h>
+#include <llvm/IR/InstrTypes.h>
+#include <llvm/IR/Instruction.h>
+#include <llvm/IR/PassManager.h>
 #include <map>
 #include <random>
 #include <vector>
