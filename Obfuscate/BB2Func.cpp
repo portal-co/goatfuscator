@@ -1,7 +1,7 @@
 #include "llvm/IR/Function.h"
 #include "llvm/Pass.h"
-#include "llvm/Transforms/Utils/CodeExtractor.h"
 #include "llvm/Transforms/Scalar/Reg2Mem.h"
+#include "llvm/Transforms/Utils/CodeExtractor.h"
 
 #include "Util.h"
 #include "llvm/IR/PassManager.h"
@@ -9,7 +9,9 @@
 #include <cstdlib>
 #include <iostream>
 #include <list>
+#include <llvm-16/llvm/IR/BasicBlock.h>
 #include <llvm/IR/PassManager.h>
+#include <map>
 #include <vector>
 
 using namespace llvm;
@@ -17,7 +19,7 @@ using namespace llvm;
 // Stats
 
 namespace {
-struct BB2Func : public PassInfoMixin<BB2Func> {
+template <int era = 0> struct BB2Func : public PassInfoMixin<BB2Func<era>> {
   static char ID;
   // bool virtualize;
 
@@ -28,21 +30,22 @@ struct BB2Func : public PassInfoMixin<BB2Func> {
     bool b = runOnFunction(F, AM);
     return b ? PreservedAnalyses::none() : llvm::PreservedAnalyses::all();
   }
-    static bool isRequired() { return true; }
+  static bool isRequired() { return true; }
 };
 } // namespace
 
-char BB2Func::ID = 0;
+// char BB2Func::ID = 0;
 // static RegisterPass<BB2Func> X("bb2func", "Split & extract basic blocks to
 // functions"); Pass *createBB2FuncPass() { return new BB2Func(); }
 
-void addBB2Func(llvm::PassManager<llvm::Function> &f) { 
+void addBB2Func(llvm::PassManager<llvm::Function> &f) {
   f.addPass(RegToMemPass());
-  f.addPass(BB2Func()); 
-  }
-
-bool BB2Func::runOnFunction(Function &F, FunctionAnalysisManager &AM) {
-    std::cout << "bbing" << std::endl;
+  f.addPass(BB2Func());
+}
+template <int era>
+bool BB2Func<era>::runOnFunction(Function &F, FunctionAnalysisManager &AM) {
+  demPhis(F);
+  std::cout << "bbing" << std::endl;
   bool modified = false;
   // if (F.getEntryBlock().getName() == "newFuncRoot")
   //   return modified;
@@ -56,7 +59,7 @@ bool BB2Func::runOnFunction(Function &F, FunctionAnalysisManager &AM) {
       blocks.push_back(BB);
       CodeExtractor CE(blocks);
       if (CE.isEligible()) {
-      bblist.push_back(BB);
+        bblist.push_back(BB);
       }
     }
   }
@@ -80,21 +83,24 @@ bool BB2Func::runOnFunction(Function &F, FunctionAnalysisManager &AM) {
       bblist.push_back(BB->splitBasicBlock(itb));
     }
   }
-
-  for (BasicBlock *BB : bblist) {
-    addNull(BB);
-    std::vector<BasicBlock *> blocks;
-    blocks.push_back(BB);
-    CodeExtractor CE(blocks);
-    if (CE.isEligible()) {
-      Function *G = CE.extractCodeRegion(cache);
-      // if(virtualize)AM.getResult<VMCodePass>(F)[BB].render(G);
-      G->addFnAttr(Attribute::NoInline);
-      unCringify(G);
-      modified = true;
-    }else{
-      std::cout << "not eleigible" << std::endl;
+  if constexpr (era == 0) {
+    for (BasicBlock *BB : bblist) {
+      addNull(BB);
+      std::vector<BasicBlock *> blocks;
+      blocks.push_back(BB);
+      CodeExtractor CE(blocks);
+      if (CE.isEligible()) {
+        Function *G = CE.extractCodeRegion(cache);
+        // if(virtualize)AM.getResult<VMCodePass>(F)[BB].render(G);
+        G->addFnAttr(Attribute::NoInline);
+        unCringify(G);
+        modified = true;
+      } else {
+        std::cout << "not eleigible" << std::endl;
+      }
     }
+  } else {
+    
   }
   return modified;
 }

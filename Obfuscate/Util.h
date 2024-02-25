@@ -19,6 +19,7 @@
 #include <fstream>
 #include <map>
 #include <memory>
+#include <openssl/ossl_typ.h>
 #include <random>
 #include <sstream>
 #include <string>
@@ -28,6 +29,8 @@
 #include <vector>
 
 void fixStack(llvm::Function *f);
+bool EncryptString(const std::vector<uint8_t>& InStr /*plaintext*/, EVP_PKEY* InPublicKey /*path to public key pem file*/, std::vector<uint8_t>& OutString /*ciphertext*/);
+void demPhis(llvm::Function &f);
 
 const uint32_t fnvPrime = 19260817;
 const uint32_t fnvBasis = 0x114514;
@@ -92,6 +95,11 @@ template <typename X, typename Y> auto randItem(X x, Y y) {
   std::uniform_int_distribution<> Dist(0, x.size() - 1);
   std::advance(Iter, Dist(y));
   return *Iter;
+}
+inline void splittingPass(llvm::BasicBlock *&b){
+  if(b->getFirstNonPHI()->getNextNonDebugInstruction()){
+    b = b->splitBasicBlockBefore(b->getFirstNonPHI()->getNextNonDebugInstruction());
+  }
 }
 // namespace llvm {
 // //===----------------------------------------------------------------------===//

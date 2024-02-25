@@ -1,14 +1,4 @@
-#include "Util.h"
-#include <cstdint>
-#include <exception>
-#include <llvm/IR/BasicBlock.h>
-#include <llvm/IR/Instruction.h>
-#include <llvm/IR/Instructions.h>
-#include <llvm/Support/Casting.h>
-#include <memory>
-#include <string>
-#include <tuple>
-#include <vector>
+#include "vm.h"
 using namespace llvm;
 // struct vm_key{
 //   unsigned id;

@@ -22,15 +22,23 @@ set(LT_LLVM_INSTALL_DIR "" CACHE PATH "LLVM installation directory")
 
 # Add the location of LLVMConfig.cmake to CMake search paths (so that
 # find_package can locate it)
-list(APPEND CMAKE_PREFIX_PATH "${LT_LLVM_INSTALL_DIR}/lib/cmake/llvm/")
+list(APPEND CMAKE_PREFIX_PATH "${LT_LLVM_INSTALL_DIR}/lib/cmake/llvm/;${LT_LLVM_INSTALL_DIR}/lib/cmake/mlir/")
 
 # FIXME: This is a warkaround for #25. Remove once resolved and use
-find_package(LLVM 17 REQUIRED CONFIG)
+find_package(MLIR REQUIRED CONFIG)
+# find_package(LLVM 17 REQUIRED CONFIG)
 
 # HelloWorld includes headers from LLVM - update the include paths accordingly
 include_directories(SYSTEM ${LLVM_INCLUDE_DIRS})
 
+# 1.5: MLIR 
+set(MLIR_DIR ${LT_LLVM_INSTALL_DIR}/lib/cmake/mlir)
 
+
+
+include_directories(SYSTEM ${MLIR_INCLUDE_DIRS})
+
+set(MLIR_BINARY_DIR ${CMAKE_BINARY_DIR})
 
 #===============================================================================
 # 2. LLVM-TUTOR BUILD CONFIGURATION
@@ -43,7 +51,7 @@ if(NOT LLVM_ENABLE_RTTI)
   set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -fno-rtti")
 endif()
 
-include_directories(${CMAKE_SOURCE_DIRECTORY}/3rdparty)
+include_directories(3rdparty)
 
 find_package(OpenSSL)
 add_definitions(${OPENSSL_DEFINITIONS})
@@ -52,8 +60,10 @@ add_definitions(${OPENSSL_DEFINITIONS})
 # 3. ADD THE TARGET
 #===============================================================================
 
+include_directories(Obfuscate)
+include_directories(.)
 
-add_library(Goatf SHARED BB2Func.cpp RIV.cpp Merge.cpp Util.cpp Connect.cpp ObfuscateConstant.cpp vm.cpp Dumbo.cpp DuplicateBB.cpp)
+add_library(Goatf MODULE Obfuscate/BB2Func.cpp Obfuscate/RIV.cpp Obfuscate/Merge.cpp Obfuscate/Util.cpp Obfuscate/Connect.cpp Obfuscate/ObfuscateConstant.cpp Obfuscate/vm.cpp Obfuscate/Dumbo.cpp Obfuscate/DuplicateBB.cpp Obfuscate/CodeExtractor2.cpp)
 
 target_include_directories(Goatf PRIVATE ${OPENSSL_INCLUDE_DIRS})
 target_link_libraries(Goatf ${OPENSSL_LIBRARIES})

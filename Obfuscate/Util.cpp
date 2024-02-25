@@ -6,9 +6,11 @@
 
 #include "llvm/IR/Instructions.h"
 
-#include "3rdparty/pstream.h"
+#include "pstream.h"
 #include "DuplicateBB.h"
 #include "Util.h"
+#include <list>
+#include <openssl/pem.h>
 
 #include "llvm/IRReader/IRReader.h"
 #include <cstdint>
@@ -22,6 +24,37 @@
 #include <llvm/Passes/PassPlugin.h>
 #include <random>
 #include <string>
+#include <vector>
+
+bool EncryptString(const std::vector<uint8_t>& InStr /*plaintext*/, EVP_PKEY* InPublicKey /*path to public key pem file*/, std::vector<uint8_t>& OutString /*ciphertext*/) {
+    
+    // Load key
+    // FILE* f = fopen(InPublicKey.c_str(), "r");
+    // EVP_PKEY* pkey = PEM_read_PUBKEY(f, NULL, NULL, NULL);
+    // fclose(f);
+    
+    // Create/initialize context
+    EVP_PKEY_CTX* ctx;
+    ctx = EVP_PKEY_CTX_new(InPublicKey, NULL);
+    EVP_PKEY_encrypt_init(ctx);
+
+    // Specify padding: default is PKCS#1 v1.5
+    // EVP_PKEY_CTX_set_rsa_padding(ctx, RSA_PKCS1_OAEP_PADDING); // for OAEP with SHA1 for both digests
+
+    // Encryption
+    size_t ciphertextLen;
+    EVP_PKEY_encrypt(ctx, NULL, &ciphertextLen, (const unsigned char*)&InStr[0], InStr.size());
+    unsigned char* ciphertext = (unsigned char*)OPENSSL_malloc(ciphertextLen);
+    EVP_PKEY_encrypt(ctx, ciphertext, &ciphertextLen, (const unsigned char*)&InStr[0], InStr.size());
+    OutString = std::vector(ciphertext,ciphertext + ciphertextLen);
+
+    // Release memory
+    // EVP_PKEY_free(pkey);
+    EVP_PKEY_CTX_free(ctx);
+    OPENSSL_free(ciphertext);
+
+    return true; // add exception/error handling
+}
 
 using namespace llvm;
 void unCringify(llvm::Function *f) {
@@ -297,6 +330,18 @@ void link(Module &m, std::string code) {
   SMDiagnostic err;
   auto x = llvm::parseIRFile(path, err, m.getContext());
   llvm::Linker::linkModules(m, std::move(x));
+}
+
+void demPhis(llvm::Function &F){
+  std::list<llvm::PHINode*> WorkList;
+  for (BasicBlock &BB : F)
+    for (auto &Phi : BB.phis())
+      WorkList.push_front(&Phi);
+ 
+  // Demote phi nodes
+  // NumPhisDemoted += WorkList.size();
+  for (auto I : WorkList)
+    DemotePHIToStack(I);
 }
 
 llvm::PassPluginLibraryInfo getDuplicateBBPluginInfo() {

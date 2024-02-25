@@ -1,5 +1,5 @@
 build/build.ninja: $(shell find .)
-	cmake -DCMAKE_EXPORT_COMPILE_COMMANDS=1 -S. -Bbuild -GNinja
+	cmake -DCMAKE_EXPORT_COMPILE_COMMANDS=1 -DCMAKE_PREFIX_PATH=/usr/lib/llvm-17/ -S. -Bbuild -GNinja
 
 build/stamp: build/build.ninja
 	ninja -C build
