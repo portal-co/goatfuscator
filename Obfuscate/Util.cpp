@@ -10,6 +10,7 @@
 #include "DuplicateBB.h"
 #include "Util.h"
 #include <list>
+#include <llvm-17/llvm/IR/GlobalValue.h>
 #include <openssl/pem.h>
 
 #include "llvm/IRReader/IRReader.h"
@@ -25,6 +26,17 @@
 #include <random>
 #include <string>
 #include <vector>
+namespace{
+  
+}
+std::map<const llvm::Target*, std::shared_ptr<ObfuscationTarget>> obf_targets = {
+
+};
+void clearModule(llvm::Module *m){
+  std::vector<llvm::GlobalValue*> vs;
+  for(auto &v: m->global_values())vs.push_back(&v);
+  for(auto *v: vs)v->removeFromParent();
+}
 
 bool EncryptString(const std::vector<uint8_t>& InStr /*plaintext*/, EVP_PKEY* InPublicKey /*path to public key pem file*/, std::vector<uint8_t>& OutString /*ciphertext*/) {
     

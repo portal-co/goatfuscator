@@ -1,3 +1,4 @@
+#pragma once
 #include "llvm/IR/Function.h"
 #include "llvm/IR/InlineAsm.h"
 #include "llvm/IR/Instructions.h"
@@ -6,6 +7,10 @@
 #include "llvm/Transforms/Utils/BasicBlockUtils.h"
 #include <cstdint>
 #include <cstdlib>
+#include <cstring>
+#include <functional>
+#include <llvm-17/llvm/Pass.h>
+#include <llvm-17/llvm/Transforms/Utils/Cloning.h>
 #include <llvm/ADT/ArrayRef.h>
 #include <llvm/IR/BasicBlock.h>
 #include <llvm/IR/DerivedTypes.h>
@@ -15,6 +20,7 @@
 #include <llvm/IR/PassManager.h>
 #include <llvm/Passes/PassBuilder.h>
 #include <llvm/Support/GenericDomTree.h>
+#include "llvm/MC/TargetRegistry.h"
 
 #include <fstream>
 #include <map>
@@ -27,10 +33,34 @@
 #include <tuple>
 #include <variant>
 #include <vector>
+template<typename T> class Pool{public:
+  class Id{
+    uint64_t x;
+    friend struct Pool<T>;
+  };
+  private:
+  std::map<uint64_t, T> all;
+  public:
+  T& operator[](Id x){
+    return all[x.x];
+  }
+  Id put(T x){
+    uint64_t a = 0;
+    while(all.contains(a))a++;
+    all[a] = x;
+    return Id{a};
+  }
+};
+
+struct ObfuscationTarget{
+
+};
+extern std::map<const llvm::Target*, std::shared_ptr<ObfuscationTarget>> obf_targets;
 
 void fixStack(llvm::Function *f);
 bool EncryptString(const std::vector<uint8_t>& InStr /*plaintext*/, EVP_PKEY* InPublicKey /*path to public key pem file*/, std::vector<uint8_t>& OutString /*ciphertext*/);
 void demPhis(llvm::Function &f);
+void clearModule(llvm::Module *m);
 
 const uint32_t fnvPrime = 19260817;
 const uint32_t fnvBasis = 0x114514;

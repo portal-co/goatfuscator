@@ -63,7 +63,7 @@ add_definitions(${OPENSSL_DEFINITIONS})
 include_directories(Obfuscate)
 include_directories(.)
 
-add_library(Goatf MODULE Obfuscate/BB2Func.cpp Obfuscate/RIV.cpp Obfuscate/Merge.cpp Obfuscate/Util.cpp Obfuscate/Connect.cpp Obfuscate/ObfuscateConstant.cpp Obfuscate/vm.cpp Obfuscate/Dumbo.cpp Obfuscate/DuplicateBB.cpp Obfuscate/CodeExtractor2.cpp)
+add_library(Goatf MODULE Obfuscate/BB2Func.cpp Obfuscate/RIV.cpp Obfuscate/Merge.cpp Obfuscate/Util.cpp Obfuscate/Connect.cpp Obfuscate/ObfuscateConstant.cpp Obfuscate/vm.cpp Obfuscate/Dumbo.cpp Obfuscate/DuplicateBB.cpp Obfuscate/CodeExtractor2.cpp Obfuscate/MLIRUtil.cpp)
 
 target_include_directories(Goatf PRIVATE ${OPENSSL_INCLUDE_DIRS})
 target_link_libraries(Goatf ${OPENSSL_LIBRARIES})
