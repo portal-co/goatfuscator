@@ -1,4 +1,7 @@
-build
+.cache
+.DS_Store
 *.bc
 *.obf
-.cache
+build
+node_modules
+target
