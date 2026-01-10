@@ -1,13 +1,14 @@
 # goatfuscator
 
 ## Description
-Project goatfuscator
+A C++ obfuscation tool ("goatfuscator"), featuring flattening and other obfuscation techniques.
 
 ## Goals
-- [ ] Add project goals
+- [ ] Obfuscate C/C++ code
+- [ ] Implement control flow flattening
 
 ## Progress
-- [ ] Initial setup
+- [ ] CMake project setup with obfuscation passes
 
 ---
 *AI assisted*
